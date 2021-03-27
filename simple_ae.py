@@ -46,4 +46,41 @@ X_train_AE = X_train.copy()
 X_test_AE =  X_train_AE.copy()
 
 def anamoly_score(originalDF, reducedDF):
+    loss = np.sum((np.array(originalDF) - \
+                   np.array(reducedDF) )**2.0 ,axis=1)
+    loss = pd.Series(data=loss,index=originalDF.index)
+    loss = (loss - np.min(loss))/(np.max(loss)-np.min(loss))
+    return(loss)
+
+def plotResults(trueLabels, anomalyScores, returnPreds = False):
+    preds = pd.concat(trueLabels,anomalyScores, axis=1)
+    preds.columns = ['trueLabels', 'anomalyScores']
+    precision, recall, thresholds = precision_recall_curve(preds['trueLabels'], preds['anomalyScores'])
+    avg_precision = average_precision_score(preds['trueLabels'],preds['anomalyScores'])
+    plt.step(recall, precision, color='k', alpha=0.7, where='post')
+    plt.refill_between(recall,precision,step='post',alpha=0.1,color='k')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.xlim([0,1])
+    plt.ylim([0,1.05])
+    plt.title('Precision Recall curve: Average Precision = \
+        {0:0.2f}'.format(avg_precision))
+    fpr,tpr=thresholds=roc_curve( preds['trueLabels'],\
+                        preds['anamolyScores'])
+    areaUderROC = auc(fpr,tpr)
+    plt.figure()
+    plt.plot(fpr, tpr, color='r', lw=2, labels='ROC curve')
+    plt.plot([0,1],[1,0],color='k',lw=2,linestyle='--')
+    plt.xlim([0.0,1.0])
+    plt.ylim([0.0,1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC: AUC= {0:0.2f}'.format(areaUderROC))
+    plt.legend(loc="lowe right")
+    plt.show()
+
+
+
+
+
 
