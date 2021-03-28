@@ -1,4 +1,6 @@
-""" Code to create simple AE for TS"""
+""" Code to create simple AE for TS
+
+"""
 import pandas as pd
 from sklearn import preprocessing as pp
 from sklearn.model_selection import train_test_split
@@ -31,18 +33,25 @@ batch_size = 32
 # model.add(Dense(units=29, activation='linear'))
 
 # building non-linear under complete auto encoder
-model = Sequential()
-model.add(Dense(units=40, activation='linear',
-                activity_regularizer=regularizers.l1(10e-5), input_dim=29))
-model.add(Dropout(0.05))
-model.add(Dense(units=29, activation='linear'))
+stacked_encoder = Sequential([
+    Dense(units=29, activation='linear', activity_regularizer=regularizers.l1(10e-5), input_dim=29),
+    Dropout(0.05),
+    Dense(units=5, activation='linear', activity_regularizer=regularizers.l1(10e-5))
+])
 
-model.compile(optimizer='adam',
-              loss='mean_squared_error',
-              metrics=['accuracy'])
+stacked_decoder = Sequential([
+    Dropout(0.05),
+    Dense(units=29, activation='linear')
+])
+
+stacked_ae = Sequential([stacked_encoder,
+                         stacked_decoder])
+stacked_ae.compile(optimizer='adam',
+                   loss='mean_squared_error',
+                   metrics=['accuracy'])
 
 # fitting the model
-history = model.fit(x=X_train_AE, y=X_train_AE,
+history = stacked_ae.fit(x=X_train_AE, y=X_train_AE,
                     epochs=num_epochs,
                     batch_size=batch_size,
                     shuffle=True,
@@ -50,6 +59,10 @@ history = model.fit(x=X_train_AE, y=X_train_AE,
                     verbose=1)
 
 # evaluating the model
-predictions = model.predict(X_test, verbose=1)
+predictions = stacked_ae.predict(X_test, verbose=1)
 anomaly_scores_ae = anomaly_scores(X_test, predictions)
 prediction_df = plot_results(y_test, anomaly_scores_ae, True)
+
+#
+# temp_df = pd.DataFrame(stacked_encoder.predict(x=X_train_AE))
+# temp_df.to_csv('5d.csv')
